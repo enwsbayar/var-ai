@@ -25,7 +25,7 @@ Futbol maçı kliplerini yükleyin veya YouTube linki girin; yapay zeka hakem gi
 
 ```bash
 # 1. Repoyu klonla
-git clone https://github.com/enwsbayar/varai.git
+git clone https://github.com/enwsbayar/var-ai.git
 cd varai
 
 # 2. Bağımlılıkları yükle
