@@ -19,7 +19,7 @@ Upload football match clips or paste a YouTube link — let the AI analyze it li
 
 | Upload Page | Analysis Results |
 |:-----------:|:----------------:|
-| ![Upload Page](assets/screenshot-upload.png) | ![Analysis Page](assets/screenshot-analysis.png) |
+| ![Upload Page](assets/screenshot-upload.jpg) | ![Analysis Page](assets/screenshot-analysis.jpg) |
 
 ---
 
