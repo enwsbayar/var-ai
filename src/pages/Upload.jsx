@@ -103,7 +103,7 @@ export default function UploadPage() {
                 navigate('/analysis', { state: { result, youtubeId: ytId } });
             }
         } catch (err) {
-            setError('Analiz sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+            setError(err.message || 'Analiz sırasında bir hata oluştu. Lütfen tekrar deneyin.');
             setLoading(false);
         }
     };

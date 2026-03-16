@@ -1,81 +1,89 @@
-# ⚽ VARAI — Futbol Pozisyon Analiz Uygulaması
+# ⚽ var-mı? — AI Football Position Analyzer
 
-Futbol maçı kliplerini yükleyin veya YouTube linki girin; yapay zeka hakem gibi analiz etsin.
-
----
-
-## 🎯 Özellikler
-
-- 📁 **Video Yükleme** — Sürükle-bırak veya dosya seç (MP4, MOV, AVI, WebM)
-- ▶️ **YouTube Linki** — YouTube URL'si yapıştır, thumbnail anında önizle
-- 🤖 **AI Analizi** — Faul, penaltı, ofsayt ve kart kararları
-- 📋 **Hakem Yorumu** — FIFA kurallarına dayalı ayrıntılı VAR raporu
-- ⏱️ **Timeline** — Videonun önemli anlarına tıklayarak atla
-- 📤 **Paylaş & İndir** — Sonuçları metin olarak kopyala veya JSON indir
+Upload football match clips or paste a YouTube link — let the AI analyze it like a VAR referee.
 
 ---
 
-## 🚀 Kurulum
+## 🎯 Features
 
-### Gereksinimler
-- [Node.js](https://nodejs.org/) v18 veya üstü
+- 📁 **Video Upload** — Drag & drop or select a file (MP4, MOV, AVI, WebM)
+- ▶️ **YouTube Link** — Paste a YouTube URL and instantly preview the thumbnail
+- 🤖 **AI Analysis** — Foul, penalty, offside, and card decisions
+- 📋 **Referee Commentary** — Detailed VAR report based on FIFA rules
+- ⏱️ **Timeline** — Jump to key moments in the video with a single click
+- 📤 **Share & Download** — Copy results as text or download as JSON
+
+---
+
+## 📸 Screenshots
+
+| Upload Page | Analysis Results |
+|:-----------:|:----------------:|
+| ![Upload Page](assets/screenshot-upload.png) | ![Analysis Page](assets/screenshot-analysis.png) |
+
+---
+
+## 🚀 Getting Started
+
+### Requirements
+- [Node.js](https://nodejs.org/) v18 or higher
 - npm
 
-### Adımlar
+### Steps
 
 ```bash
-# 1. Repoyu klonla
+# 1. Clone the repository
 git clone https://github.com/enwsbayar/var-ai.git
-cd varai
+cd var-ai
 
-# 2. Bağımlılıkları yükle
+# 2. Install dependencies
 npm install
 
-# 3. Geliştirme sunucusunu başlat
+# 3. Start the development server
 npm run dev
 ```
 
-Tarayıcıda **http://localhost:5173** adresini aç.
+Open **http://localhost:5173** in your browser.
 
 ---
 
-## 🏗️ Proje Yapısı
+## 🏗️ Project Structure
 
 ```
 src/
 ├── pages/
-│   ├── Home.jsx          # Ana sayfa
-│   ├── Upload.jsx        # Video yükleme (dosya + YouTube)
-│   └── Analysis.jsx      # Analiz sonuçları
+│   ├── Home.jsx          # Landing page
+│   ├── Upload.jsx        # Video upload (file + YouTube)
+│   └── Analysis.jsx      # Analysis results
 ├── components/
 │   └── Navbar.jsx
 └── services/
-    └── aiAnalysis.js     # AI analiz servisi (mock → Gemini'ye hazır)
+    └── aiAnalysis.js     # AI analysis service (mock → ready for Gemini)
 ```
 
 ---
 
-## 🤖 AI Entegrasyonu
+## 🤖 AI Integration
 
-Şu an uygulama **simüle edilmiş** (mock) bir AI servisi kullanmaktadır.  
-Gerçek bir AI entegrasyonu için önerilen çözüm **Google Gemini Video API**'dir:
+The app currently uses a **simulated** (mock) AI service.  
+The recommended solution for real AI integration is **Google Gemini Video API**:
 
-- YouTube linklerini doğrudan analiz edebilir (indirme gerekmez)
-- Video dosyalarını frame frame işleyebilir
-- FIFA kurallarına göre hakem yorumu üretebilir
+- Directly analyzes YouTube links (no download needed)
+- Processes video files frame by frame
+- Generates referee commentary based on FIFA rules
 
-Gerçek entegrasyon için `src/services/aiAnalysis.js` içindeki fonksiyonları bir backend endpoint'ine bağlayın.
+For real integration, connect the functions in `src/services/aiAnalysis.js` to a backend endpoint.
 
 ---
 
-## 🛠️ Teknolojiler
+## 🛠️ Tech Stack
 
-| Katman | Teknoloji |
-|--------|-----------|
+| Layer | Technology |
+|-------|------------|
 | Framework | React 18 + Vite |
 | Routing | React Router v6 |
-| Stil | Vanilla CSS (özel dark mode) |
-| İkonlar | Lucide React |
+| Styling | Vanilla CSS (custom dark mode) |
+| Icons | Lucide React |
 | Font | Inter + Bebas Neue (Google Fonts) |
 
 ---

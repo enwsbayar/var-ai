@@ -1,162 +1,151 @@
 /**
- * AI Analysis Service
- * Simulates a backend API call that would call a video AI model (e.g. Gemini Video).
- * Returns structured referee analysis results.
+ * AI Analysis Service — Google Gemini Video API
+ * Analyzes football video clips for VAR decisions.
  */
 
-const SCENARIOS = [
-  {
-    id: 1,
-    summary: "Ceza sahası içinde savunma oyuncusu rakibini ayaktan çelmeye çalışırken temas gerçekleşti.",
-    foul: true,
-    penalty: true,
-    offside: false,
-    card: "yellow",
-    cardReason: "Tehlikeli oyun – kasıtsız müdahale",
-    confidence: 94,
-    refereeComment: `VAR incelemesi tamamlandı. Görüntüler incelendiğinde, savunma oyuncusunun ceza sahası sınırları içinde rakip oyuncunun bacağına kontrollü olmayan bir müdahalede bulunduğu açıkça görülmektedir. Topu oynamak için yapılan hamle top konumuna göre erken gerçekleşmiş ve rakibin hareket yönünü engellemiştir.
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-**Karar: Penaltı + Sarı Kart**
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const genAI = new GoogleGenerativeAI(API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-FIFA Futbol Kuralları Kitabı Kural 12 uyarınca, ceza sahası içinde gerçekleşen ve rakibi düşürmeye neden olan her türlü dikkatsiz müdahale dolaysız serbest vuruş ve penaltı ile cezalandırılır. Temas kasıtsız olup, oyuncu topu oynamaya çalışmıştır; bu nedenle sadece sarı kart yeterli görülmüştür.`,
-    keyMoments: [
-      { time: 2.1, label: "Hücum başlıyor", type: "info" },
-      { time: 4.8, label: "Temas anı", type: "contact" },
-      { time: 5.3, label: "Düşüş", type: "foul" },
-      { time: 6.0, label: "Hakem durduruyor", type: "whistle" },
-    ],
-  },
-  {
-    id: 2,
-    summary: "Uzun pas sonrası forvet oyuncusu son savunmacının arkasında kaldı.",
-    foul: false,
-    penalty: false,
-    offside: true,
-    card: null,
-    cardReason: null,
-    confidence: 97,
-    refereeComment: `VAR ofsayt hattı çizimi tamamlandı. Pas atıldığı anda forvet oyuncusunun sol omzunun savunma hattının yaklaşık 23 cm gerisinde olduğu tespit edildi.
 
-**Karar: Ofsayt – Gol geçersiz**
+const VAR_PROMPT = `
+You are a professional VAR (Video Assistant Referee) AI system trained on FIFA laws of the game.
 
-FIFA Ofsayt Kuralı (Kural 11) gereği, oyuncunun vücudunun topla gol atılabilecek her bölümü – eller hariç – değerlendirilir. Yarı-otomatik ofsayt teknolojisinin tespiti kesin olup hakem kararı doğrulanmıştır.`,
-    keyMoments: [
-      { time: 1.5, label: "Top uzun pasla ilerliyor", type: "info" },
-      { time: 3.2, label: "Pas atım anı", type: "contact" },
-      { time: 3.2, label: "Ofsayt pozisyonu", type: "offside" },
-      { time: 5.8, label: "Gol sevinci – VAR incelemesi", type: "whistle" },
-    ],
-  },
-  {
-    id: 3,
-    summary: "Orta sahada sert giriş; oyuncu rakibinin arkasından geliyor.",
-    foul: true,
-    penalty: false,
-    offside: false,
-    card: "red",
-    cardReason: "Tehlikeli faul – rakibin bütünlüğünü tehdit eden hareket",
-    confidence: 89,
-    refereeComment: `Görüntüler analiz edildi. Orta saha oyuncusu arkadan ve tamamen topun dışından rakibine sert bir şekilde girmiş, rakibin aşil tendonunu tehdit eden bir temas gerçekleşmiştir.
+Analyze this football/soccer video clip and provide a detailed referee decision in Turkish.
 
-**Karar: Doğrudan Kırmızı Kart**
+IMPORTANT: Respond ONLY with a valid JSON object (no markdown, no extra text) in this exact format:
+{
+  "summary": "Brief one-sentence Turkish summary of what happens in the video",
+  "foul": true or false,
+  "penalty": true or false,
+  "offside": true or false,
+  "card": "yellow" | "red" | null,
+  "cardReason": "Turkish reason for the card or null if no card",
+  "confidence": number between 70 and 99,
+  "refereeComment": "Detailed Turkish referee commentary explaining the decision based on FIFA laws. Minimum 3 sentences.",
+  "keyMoments": [
+    { "time": number in seconds (0-10 range), "label": "Turkish label", "type": "info" | "contact" | "foul" | "offside" | "whistle" }
+  ]
+}
 
-FIFA Kural 12 – Ciddi faul oynamak: Oyuncu aşırı güç kullanarak ya da rakibinin güvenliğini tehdit ederek faul yapmaktadır. Bu tür müdahaleler kırmızı kartı gerektirmekte olup oyuncunun derhal oyundan uzaklaştırılması gerekmektedir. Serbest vuruş noktası temas yerine yakın olduğundan penaltı söz konusu değildir.`,
-    keyMoments: [
-      { time: 1.0, label: "Top kontrolden çıkıyor", type: "info" },
-      { time: 2.7, label: "Arkadan giriş", type: "contact" },
-      { time: 2.8, label: "Sert temas", type: "foul" },
-      { time: 4.1, label: "Kırmızı kart", type: "whistle" },
-    ],
-  },
-  {
-    id: 4,
-    summary: "Ceza sahasında kaleci çıkışı, forvet oyuncusuyla temas.",
-    foul: false,
-    penalty: false,
-    offside: false,
-    card: null,
-    cardReason: null,
-    confidence: 88,
-    refereeComment: `Detaylı görüntü analizi yapıldı. Kaleci topu kontrol etmeyi hedeflemiş ve çıkışını topa yönelik gerçekleştirmiştir. Temas kaçınılmaz olmakla birlikte ikisi de topu oynamaya çalışmıştır.
-
-**Karar: Faul Yok – Oyuna Devam**
-
-Kaleci topu kontrol etmek için meşru bir çıkış yapmıştır. Temas her iki oyuncunun da topu oynama girişiminin doğal bir sonucudur. FIFA Kural 12 uyarınca bu temas faul olarak değerlendirilmez; penaltı uygulanmaz.`,
-    keyMoments: [
-      { time: 1.2, label: "Kaleci çıkış yapıyor", type: "info" },
-      { time: 2.5, label: "Temas noktası", type: "contact" },
-      { time: 3.0, label: "Hakem devam işareti", type: "whistle" },
-    ],
-  },
-];
+Rules:
+- Base your decision ONLY on what you actually see in the video
+- If you cannot clearly see a foul/offside/penalty, set those to false
+- keyMoments should have 3-5 entries with estimated timestamps
+- refereeComment must reference specific FIFA Law (e.g. Kural 12 - Faul ve Sert Oyun)
+- Be accurate and realistic — do NOT guess if unsure, set confidence lower
+`;
 
 /**
- * Analyzes a video file (simulated).
- * In production, this would POST the file to a backend endpoint
- * that calls the Gemini Video API or a custom ML model.
- *
+ * Converts a File to base64 string
+ */
+async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Parses Gemini's JSON response safely
+ */
+function parseGeminiResponse(text, fileName) {
+  try {
+    // Strip any accidental markdown fences
+    const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    return {
+      ...parsed,
+      fileName: fileName || 'analiz.mp4',
+      analyzedAt: new Date().toISOString(),
+    };
+  } catch (e) {
+    console.error('Gemini JSON parse error:', e, '\nRaw:', text);
+    throw new Error('Gemini yanıtı ayrıştırılamadı. Lütfen tekrar deneyin.');
+  }
+}
+
+/**
+ * Analyzes a local video file using Gemini.
  * @param {File} videoFile
- * @param {function} onProgress - callback with progress 0-100
- * @returns {Promise<object>} analysis result
+ * @param {function} onProgress
  */
 export async function analyzeVideo(videoFile, onProgress) {
-  // Simulate upload + processing time
-  const steps = [
-    { pct: 15, delay: 600, label: "Video yükleniyor..." },
-    { pct: 35, delay: 900, label: "Kareler işleniyor..." },
-    { pct: 55, delay: 1100, label: "Model analiz ediyor..." },
-    { pct: 75, delay: 900, label: "Kural yorumu hazırlanıyor..." },
-    { pct: 90, delay: 700, label: "Timeline oluşturuluyor..." },
-    { pct: 100, delay: 500, label: "Tamamlandı!" },
-  ];
+  onProgress?.(10, 'Video hazırlanıyor...');
 
-  for (const step of steps) {
-    await new Promise((r) => setTimeout(r, step.delay));
-    onProgress?.(step.pct, step.label);
+  // Convert video to base64 (inline data approach — works for files <20MB)
+  let base64Data;
+  try {
+    base64Data = await fileToBase64(videoFile);
+  } catch {
+    throw new Error('Video dosyası okunamadı.');
   }
 
-  // Pick a random scenario for demo purposes
-  const scenario = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
+  onProgress?.(30, 'Gemini modeline gönderiliyor...');
 
-  return {
-    ...scenario,
-    fileName: videoFile?.name || "analiz.mp4",
-    analyzedAt: new Date().toISOString(),
-  };
+  const mimeType = videoFile.type || 'video/mp4';
+
+  let response;
+  try {
+    response = await model.generateContent([
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType,
+        },
+      },
+      VAR_PROMPT,
+    ]);
+  } catch (err) {
+    console.error('Gemini API error:', err);
+    throw new Error('Gemini API hatası: ' + (err.message || 'Bilinmeyen hata'));
+  }
+
+  onProgress?.(80, 'Hakem kararı hazırlanıyor...');
+
+  const text = response.response.text();
+  onProgress?.(100, 'Tamamlandı!');
+
+  return parseGeminiResponse(text, videoFile.name);
 }
 
-/**
- * Analyzes a YouTube video URL (simulated).
- * In production: POST the YouTube URL to a backend that calls
- * Gemini API with the video URL directly — Gemini natively
- * supports youtube.com links as video input.
- *
- * @param {string} youtubeUrl - Full YouTube URL
- * @param {function} onProgress - callback with progress 0-100
- * @returns {Promise<object>} analysis result
- */
 export async function analyzeYouTube(youtubeUrl, onProgress) {
-  const steps = [
-    { pct: 10, delay: 500, label: "YouTube bağlantısı kuruluyor..." },
-    { pct: 25, delay: 800, label: "Video akışı alınıyor..." },
-    { pct: 45, delay: 1000, label: "Gemini model analiz ediyor..." },
-    { pct: 65, delay: 1100, label: "Futbol kuralları uygulanıyor..." },
-    { pct: 85, delay: 800, label: "Hakem yorumu hazırlanıyor..." },
-    { pct: 100, delay: 500, label: "Tamamlandı!" },
-  ];
+  onProgress?.(15, 'YouTube bağlantısı kuruluyor...');
+  onProgress?.(40, 'YouTube videosu analiz ediliyor (Simülasyon)...');
 
-  for (const step of steps) {
-    await new Promise((r) => setTimeout(r, step.delay));
-    onProgress?.(step.pct, step.label);
-  }
-
-  const scenario = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
-
-  return {
-    ...scenario,
+  // Gemini API'nin standart JS SDK'sı doğrudan YouTube URL'lerini "fileData" olarak 
+  // kabul etmiyor. Bunun yerine videoyu indirip base64 olarak vermek veya Google Cloud 
+  // Vertex AI API kullanmak gerekiyor. Free tier JS SDK'sında bunu çözmek için:
+  // Şimdilik YouTube URL'lerini mock analiz ile destekliyoruz:
+  
+  await new Promise(r => setTimeout(r, 2000));
+  
+  const mockResult = {
+    summary: "YouTube videosundaki pozisyon analiz edildi (Simüle edilmiş sonuç).",
+    foul: true,
+    penalty: false,
+    offside: false,
+    card: "yellow",
+    cardReason: "Tehlikeli hareket",
+    confidence: 85,
+    refereeComment: "YouTube videolarını JS SDK üzerinden doğrudan API'ye beslemek ücretli Google Cloud entegrasyonu (Vertex AI) veya sunucu tarafında (backend) videoyu indirip base64'e çevirmeyi gerektirir. Bu analiz simüle edilmiştir.",
+    keyMoments: [
+      { time: 1.0, label: "Pozisyon başlangıcı", type: "info" }
+    ],
     fileName: `YouTube: ${youtubeUrl}`,
-    source: "youtube",
-    analyzedAt: new Date().toISOString(),
+    analyzedAt: new Date().toISOString()
   };
-}
 
+  onProgress?.(85, 'Hakem kararı hazırlanıyor...');
+  await new Promise(r => setTimeout(r, 1000));
+  onProgress?.(100, 'Tamamlandı!');
+
+  return mockResult;
+}
